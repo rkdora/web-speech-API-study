@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <title>しっかりしたオウムくん</title>
+  </head>
+  <body>
+    <h2>しっかりしたオウムくん</h2>
+    <button id="btn">スタート</button>
+    <div id="content"></div>
+
+    <script>
+      //音声合成
+      function speak(str){
+        var uttr = new SpeechSynthesisUtterance();
+        uttr.text = str;
+
+        //言語
+        uttr.lang = 'ja-JP';
+        //
+        // //Kyoko
+        // var voice = speechSynthesis.getVoices().find(function(voice){
+        //   return voice.name === 'Kyoko';
+        // });
+        //
+        // if(voice){
+        //   uttr.voice = voice;
+        // }
+
+        speechSynthesis.speak(uttr);
+      }
+
+      // waitてきな
+      function sleep(waitMsec) {
+        var startMsec = new Date();
+        while (new Date() - startMsec < waitMsec);
+      }
+
+      //音声認識の準備
+      const speech = new webkitSpeechRecognition();
+      speech.lang = 'ja-JP';
+
+      const btn = document.getElementById('btn');
+      const content = document.getElementById('content');
+
+      btn.addEventListener('click' , function() {
+          // 音声認識をスタート
+          speech.start();
+      });
+
+      //NGワード
+      const ngWords = [
+        "あの",
+        "えっと",
+        "うんこ",
+        "うんち"
+      ];
+
+      //文字起こし & 発話
+      speech.onresult = function(e) {
+        speech.stop();
+        if(e.results[0].isFinal){
+
+          new Promise((resolve, reject) => {
+            //文字起こし
+            var text =  e.results[0][0].transcript;
+            content.innerHTML += '<div>'+ text +'</div>';
+            resolve(text);
+          })
+          .then((text) => {
+            //NGワード→無音
+            const editedText = new Promise((resolve, reject) => {
+              for(let w of ngWords){
+                if(text.includes(w)){
+                  //正規表現により、文字列中のNGワードを無音に置換
+                  var ngWord = new RegExp( w, 'g' );
+                  text = text.replace(ngWord, "、、");
+                }
+              }
+              resolve(text);
+            }).then((text) => {
+              return text;
+            });
+            return editedText;
+          })
+          .then((text) => {
+            speak(text);
+          })
+          .then(() => {
+            sleep(3000);
+          });
+        }
+      }
+
+      speech.onend = () => {
+        speech.start()
+      };
+    </script>
+  <body>
+<html>
